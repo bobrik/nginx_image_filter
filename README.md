@@ -1,7 +1,7 @@
 nginx image_filter
 -----
 
-This is basically the same [image_filter](ngx_http_image_filter_module) module, but with ability to place cropped images.
+This is basically the same [image_filter](http://nginx.org/en/docs/http/ngx_http_image_filter_module.html) module, but with ability to place cropped images.
 
 ## Goals
 
