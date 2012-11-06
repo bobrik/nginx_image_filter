@@ -941,6 +941,11 @@ transparent:
 
             dst = ngx_http_image_new(r, dx - ox, dy - oy, colors);
 
+            if (dst == NULL) {
+                gdImageDestroy(src);
+                return NULL;
+            }
+
             if (conf->ox == NGX_HTTP_IMAGE_OFFSET_LEFT) {
                 ox = 0;
             } else if (conf->ox == NGX_HTTP_IMAGE_OFFSET_CENTER) {
@@ -951,11 +956,6 @@ transparent:
                 oy = 0;
             } else if (conf->oy == NGX_HTTP_IMAGE_OFFSET_CENTER) {
                 oy /= 2;
-            }
-
-            if (dst == NULL) {
-                gdImageDestroy(src);
-                return NULL;
             }
 
             ngx_log_debug4(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
