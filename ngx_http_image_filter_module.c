@@ -32,6 +32,9 @@
 #define NGX_HTTP_IMAGE_GIF       2
 #define NGX_HTTP_IMAGE_PNG       3
 
+#define NGX_HTTP_IMAGE_OFFSET_TYPE_HORIZONTAL 0
+#define NGX_HTTP_IMAGE_OFFSET_TYPE_VERTICAL 1
+
 #define NGX_HTTP_IMAGE_OFFSET_CENTER    0
 #define NGX_HTTP_IMAGE_OFFSET_LEFT      1
 #define NGX_HTTP_IMAGE_OFFSET_RIGHT     2
@@ -48,13 +51,15 @@ typedef struct {
     ngx_uint_t                   angle;
     ngx_uint_t                   jpeg_quality;
     ngx_uint_t                   sharpen;
-    ngx_uint_t                   ox;
-    ngx_uint_t                   oy;
+    ngx_uint_t                   crop_offset_x;
+    ngx_uint_t                   crop_offset_y;
 
     ngx_flag_t                   transparency;
 
     ngx_http_complex_value_t    *wcv;
     ngx_http_complex_value_t    *hcv;
+    ngx_http_complex_value_t    *oxv;
+    ngx_http_complex_value_t    *oyv;
     ngx_http_complex_value_t    *acv;
     ngx_http_complex_value_t    *jqcv;
     ngx_http_complex_value_t    *shcv;
@@ -73,6 +78,8 @@ typedef struct {
     ngx_uint_t                   height;
     ngx_uint_t                   max_width;
     ngx_uint_t                   max_height;
+    ngx_uint_t                   crop_offset_x;
+    ngx_uint_t                   crop_offset_y;
     ngx_uint_t                   angle;
 
     ngx_uint_t                   phase;
@@ -105,6 +112,15 @@ static u_char *ngx_http_image_out(ngx_http_request_t *r, ngx_uint_t type,
 static void ngx_http_image_cleanup(void *data);
 static ngx_uint_t ngx_http_image_filter_get_value(ngx_http_request_t *r,
     ngx_http_complex_value_t *cv, ngx_uint_t v);
+static void
+ngx_http_image_filter_crop_offset(ngx_http_request_t *r,
+    ngx_http_complex_value_t *cv, ngx_uint_t t, ngx_uint_t *v);
+static void
+ngx_http_image_filter_vertical_crop_offset(ngx_str_t *value,
+    ngx_uint_t *v);
+static void
+ngx_http_image_filter_horizontal_crop_offset(ngx_str_t *value,
+    ngx_uint_t *v);
 static ngx_uint_t ngx_http_image_filter_value(ngx_str_t *value);
 
 
@@ -545,6 +561,22 @@ ngx_http_image_process(ngx_http_request_t *r)
         return NULL;
     }
 
+    if (conf->oxv == NULL) {
+        ctx->crop_offset_x = conf->crop_offset_x;
+    } else {
+        ngx_http_image_filter_crop_offset(r, conf->oxv,
+                                          NGX_HTTP_IMAGE_OFFSET_TYPE_HORIZONTAL,
+                                          &ctx->crop_offset_x);
+    }
+
+    if (conf->oyv == NULL) {
+        ctx->crop_offset_y = conf->crop_offset_y;
+    } else {
+        ngx_http_image_filter_crop_offset(r, conf->oyv,
+                                          NGX_HTTP_IMAGE_OFFSET_TYPE_VERTICAL,
+                                          &ctx->crop_offset_y);
+    }
+
     if (rc == NGX_OK
         && ctx->width <= ctx->max_width
         && ctx->height <= ctx->max_height
@@ -927,12 +959,14 @@ transparent:
 
         if ((ngx_uint_t) dx > ctx->max_width) {
             ox = dx - ctx->max_width;
+
         } else {
             ox = 0;
         }
 
         if ((ngx_uint_t) dy > ctx->max_height) {
             oy = dy - ctx->max_height;
+
         } else {
             oy = 0;
         }
@@ -946,15 +980,15 @@ transparent:
                 return NULL;
             }
 
-            if (conf->ox == NGX_HTTP_IMAGE_OFFSET_LEFT) {
+            if (ctx->crop_offset_x == NGX_HTTP_IMAGE_OFFSET_LEFT) {
                 ox = 0;
-            } else if (conf->ox == NGX_HTTP_IMAGE_OFFSET_CENTER) {
+            } else if (ctx->crop_offset_x == NGX_HTTP_IMAGE_OFFSET_CENTER) {
                 ox /= 2;
             }
 
-            if (conf->oy == NGX_HTTP_IMAGE_OFFSET_TOP) {
+            if (ctx->crop_offset_y == NGX_HTTP_IMAGE_OFFSET_TOP) {
                 oy = 0;
-            } else if (conf->oy == NGX_HTTP_IMAGE_OFFSET_CENTER) {
+            } else if (ctx->crop_offset_y == NGX_HTTP_IMAGE_OFFSET_CENTER) {
                 oy /= 2;
             }
 
@@ -1101,7 +1135,6 @@ ngx_http_image_out(ngx_http_request_t *r, ngx_uint_t type, gdImagePtr img,
 
     out = NULL;
 
-
     switch (type) {
 
     case NGX_HTTP_IMAGE_JPEG:
@@ -1163,6 +1196,52 @@ ngx_http_image_filter_get_value(ngx_http_request_t *r,
     return ngx_http_image_filter_value(&val);
 }
 
+static void
+ngx_http_image_filter_crop_offset(ngx_http_request_t *r,
+    ngx_http_complex_value_t *cv, ngx_uint_t t, ngx_uint_t *v)
+{
+    ngx_str_t value;
+
+    if (ngx_http_complex_value(r, cv, &value) != NGX_OK) {
+        return;
+    }
+
+    value.data[value.len] = 0;
+
+    if (t == NGX_HTTP_IMAGE_OFFSET_TYPE_HORIZONTAL) {
+        ngx_http_image_filter_horizontal_crop_offset(&value, v);
+    } else if (t == NGX_HTTP_IMAGE_OFFSET_TYPE_VERTICAL) {
+        ngx_http_image_filter_vertical_crop_offset(&value, v);
+    }
+}
+
+
+static void
+ngx_http_image_filter_horizontal_crop_offset(ngx_str_t *value,
+    ngx_uint_t *v)
+{
+    if (ngx_strcmp(value->data, "center") == 0) {
+        *v = NGX_HTTP_IMAGE_OFFSET_CENTER;
+    } else if (ngx_strcmp(value->data, "left") == 0) {
+        *v = NGX_HTTP_IMAGE_OFFSET_LEFT;
+    } else if (ngx_strcmp(value->data, "right") == 0) {
+        *v = NGX_HTTP_IMAGE_OFFSET_RIGHT;
+    }
+}
+
+static void
+ngx_http_image_filter_vertical_crop_offset(ngx_str_t *value,
+    ngx_uint_t *v)
+{
+    if (ngx_strcmp(value->data, "center") == 0) {
+        *v = NGX_HTTP_IMAGE_OFFSET_CENTER;
+    } else if (ngx_strcmp(value->data, "top") == 0) {
+        *v = NGX_HTTP_IMAGE_OFFSET_TOP;
+    } else if (ngx_strcmp(value->data, "bottom") == 0) {
+        *v = NGX_HTTP_IMAGE_OFFSET_BOTTOM;
+    }
+}
+
 
 static ngx_uint_t
 ngx_http_image_filter_value(ngx_str_t *value)
@@ -1199,8 +1278,8 @@ ngx_http_image_filter_create_conf(ngx_conf_t *cf)
     conf->angle = NGX_CONF_UNSET_UINT;
     conf->transparency = NGX_CONF_UNSET;
     conf->buffer_size = NGX_CONF_UNSET_SIZE;
-    conf->ox = NGX_CONF_UNSET_UINT;
-    conf->oy = NGX_CONF_UNSET_UINT;
+    conf->crop_offset_x = NGX_CONF_UNSET_UINT;
+    conf->crop_offset_y = NGX_CONF_UNSET_UINT;
 
     return conf;
 }
@@ -1249,8 +1328,16 @@ ngx_http_image_filter_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_size_value(conf->buffer_size, prev->buffer_size,
                               1 * 1024 * 1024);
 
-    ngx_conf_merge_uint_value(conf->ox, prev->ox, NGX_HTTP_IMAGE_OFFSET_CENTER);
-    ngx_conf_merge_uint_value(conf->oy, prev->oy, NGX_HTTP_IMAGE_OFFSET_CENTER);
+    ngx_conf_merge_uint_value(conf->crop_offset_x, prev->crop_offset_x, NGX_HTTP_IMAGE_OFFSET_CENTER);
+    ngx_conf_merge_uint_value(conf->crop_offset_y, prev->crop_offset_y, NGX_HTTP_IMAGE_OFFSET_CENTER);
+
+    if (conf->oxv == NULL) {
+        conf->oxv = prev->oxv;
+    }
+
+    if (conf->oyv == NULL) {
+        conf->oyv = prev->oyv;
+    }
 
     return NGX_CONF_OK;
 }
@@ -1502,6 +1589,7 @@ ngx_http_image_filter_sharpen(ngx_conf_t *cf, ngx_command_t *cmd,
     return NGX_CONF_OK;
 }
 
+
 static char *
 ngx_http_image_filter_offset(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf)
@@ -1509,31 +1597,56 @@ ngx_http_image_filter_offset(ngx_conf_t *cf, ngx_command_t *cmd,
     ngx_http_image_filter_conf_t *imcf = conf;
 
     ngx_str_t                         *value;
+    ngx_http_complex_value_t           cv;
+    ngx_http_compile_complex_value_t   ccv;
 
     value = cf->args->elts;
 
-    if (ngx_strcmp(value[1].data, "center") == 0) {
-        imcf->ox = NGX_HTTP_IMAGE_OFFSET_CENTER;
-    } else if (ngx_strcmp(value[1].data, "left") == 0) {
-        imcf->ox = NGX_HTTP_IMAGE_OFFSET_LEFT;
-    } else if (ngx_strcmp(value[1].data, "right") == 0) {
-        imcf->ox = NGX_HTTP_IMAGE_OFFSET_RIGHT;
-    } else {
+    ngx_memzero(&ccv, sizeof(ngx_http_compile_complex_value_t));
+
+    ccv.cf = cf;
+    ccv.value = &value[1];
+    ccv.complex_value = &cv;
+
+    if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
         return NGX_CONF_ERROR;
     }
 
-    if (ngx_strcmp(value[2].data, "center") == 0) {
-        imcf->oy = NGX_HTTP_IMAGE_OFFSET_CENTER;
-    } else if (ngx_strcmp(value[2].data, "top") == 0) {
-        imcf->oy = NGX_HTTP_IMAGE_OFFSET_TOP;
-    } else if (ngx_strcmp(value[2].data, "bottom") == 0) {
-        imcf->oy = NGX_HTTP_IMAGE_OFFSET_BOTTOM;
+    if (cv.lengths == NULL) {
+        ngx_http_image_filter_horizontal_crop_offset(&value[1], &imcf->crop_offset_x);
     } else {
+        imcf->oxv = ngx_palloc(cf->pool, sizeof(ngx_http_complex_value_t));
+        if (imcf->oxv == NULL) {
+            return NGX_CONF_ERROR;
+        }
+
+        *imcf->oxv = cv;
+    }
+
+    ngx_memzero(&ccv, sizeof(ngx_http_compile_complex_value_t));
+
+    ccv.cf = cf;
+    ccv.value = &value[2];
+    ccv.complex_value = &cv;
+
+    if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
         return NGX_CONF_ERROR;
+    }
+
+    if (cv.lengths == NULL) {
+        ngx_http_image_filter_vertical_crop_offset(&value[2], &imcf->crop_offset_y);
+    } else {
+        imcf->oyv = ngx_palloc(cf->pool, sizeof(ngx_http_complex_value_t));
+        if (imcf->oyv == NULL) {
+            return NGX_CONF_ERROR;
+        }
+
+        *imcf->oyv = cv;
     }
 
     return NGX_CONF_OK;
 }
+
 
 static ngx_int_t
 ngx_http_image_filter_init(ngx_conf_t *cf)
