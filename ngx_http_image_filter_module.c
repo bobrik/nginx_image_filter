@@ -32,9 +32,6 @@
 #define NGX_HTTP_IMAGE_GIF       2
 #define NGX_HTTP_IMAGE_PNG       3
 
-#define NGX_HTTP_IMAGE_OFFSET_TYPE_HORIZONTAL 0
-#define NGX_HTTP_IMAGE_OFFSET_TYPE_VERTICAL 1
-
 #define NGX_HTTP_IMAGE_OFFSET_CENTER    0
 #define NGX_HTTP_IMAGE_OFFSET_LEFT      1
 #define NGX_HTTP_IMAGE_OFFSET_RIGHT     2
@@ -564,16 +561,14 @@ ngx_http_image_process(ngx_http_request_t *r)
     if (conf->oxv == NULL) {
         ctx->crop_offset_x = conf->crop_offset_x;
     } else {
-        ngx_http_image_filter_crop_offset(r, conf->oxv,
-                                          NGX_HTTP_IMAGE_OFFSET_TYPE_HORIZONTAL,
+        ngx_http_image_filter_crop_offset(r, conf->oxv, 1,
                                           &ctx->crop_offset_x);
     }
 
     if (conf->oyv == NULL) {
         ctx->crop_offset_y = conf->crop_offset_y;
     } else {
-        ngx_http_image_filter_crop_offset(r, conf->oyv,
-                                          NGX_HTTP_IMAGE_OFFSET_TYPE_VERTICAL,
+        ngx_http_image_filter_crop_offset(r, conf->oyv, 0,
                                           &ctx->crop_offset_y);
     }
 
@@ -1198,7 +1193,8 @@ ngx_http_image_filter_get_value(ngx_http_request_t *r,
 
 static void
 ngx_http_image_filter_crop_offset(ngx_http_request_t *r,
-    ngx_http_complex_value_t *cv, ngx_uint_t t, ngx_uint_t *v)
+    ngx_http_complex_value_t *cv, ngx_uint_t horizontal,
+    ngx_uint_t *v)
 {
     ngx_str_t value;
 
@@ -1206,11 +1202,9 @@ ngx_http_image_filter_crop_offset(ngx_http_request_t *r,
         return;
     }
 
-    value.data[value.len] = 0;
-
-    if (t == NGX_HTTP_IMAGE_OFFSET_TYPE_HORIZONTAL) {
+    if (horizontal) {
         ngx_http_image_filter_horizontal_crop_offset(&value, v);
-    } else if (t == NGX_HTTP_IMAGE_OFFSET_TYPE_VERTICAL) {
+    } else {
         ngx_http_image_filter_vertical_crop_offset(&value, v);
     }
 }
@@ -1607,6 +1601,7 @@ ngx_http_image_filter_offset(ngx_conf_t *cf, ngx_command_t *cmd,
     ccv.cf = cf;
     ccv.value = &value[1];
     ccv.complex_value = &cv;
+    ccv.zero = 1;
 
     if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
         return NGX_CONF_ERROR;
@@ -1628,6 +1623,7 @@ ngx_http_image_filter_offset(ngx_conf_t *cf, ngx_command_t *cmd,
     ccv.cf = cf;
     ccv.value = &value[2];
     ccv.complex_value = &cv;
+    ccv.zero = 1;
 
     if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
         return NGX_CONF_ERROR;
