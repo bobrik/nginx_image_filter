@@ -977,12 +977,14 @@ transparent:
 
             if (ctx->crop_offset_x == NGX_HTTP_IMAGE_OFFSET_LEFT) {
                 ox = 0;
+
             } else if (ctx->crop_offset_x == NGX_HTTP_IMAGE_OFFSET_CENTER) {
                 ox /= 2;
             }
 
             if (ctx->crop_offset_y == NGX_HTTP_IMAGE_OFFSET_TOP) {
                 oy = 0;
+
             } else if (ctx->crop_offset_y == NGX_HTTP_IMAGE_OFFSET_CENTER) {
                 oy /= 2;
             }
@@ -1216,8 +1218,10 @@ ngx_http_image_filter_horizontal_crop_offset(ngx_str_t *value,
 {
     if (ngx_strcmp(value->data, "center") == 0) {
         *v = NGX_HTTP_IMAGE_OFFSET_CENTER;
+
     } else if (ngx_strcmp(value->data, "left") == 0) {
         *v = NGX_HTTP_IMAGE_OFFSET_LEFT;
+
     } else if (ngx_strcmp(value->data, "right") == 0) {
         *v = NGX_HTTP_IMAGE_OFFSET_RIGHT;
     }
@@ -1229,8 +1233,10 @@ ngx_http_image_filter_vertical_crop_offset(ngx_str_t *value,
 {
     if (ngx_strcmp(value->data, "center") == 0) {
         *v = NGX_HTTP_IMAGE_OFFSET_CENTER;
+
     } else if (ngx_strcmp(value->data, "top") == 0) {
         *v = NGX_HTTP_IMAGE_OFFSET_TOP;
+
     } else if (ngx_strcmp(value->data, "bottom") == 0) {
         *v = NGX_HTTP_IMAGE_OFFSET_BOTTOM;
     }
