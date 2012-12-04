@@ -758,7 +758,7 @@ ngx_http_image_resize(ngx_http_request_t *r, ngx_http_image_filter_ctx_t *ctx)
     int                            sx, sy, dx, dy, ox, oy, ax, ay, size,
                                    colors, palette, transparent, sharpen,
                                    red, green, blue, t,
-                                   crop_offset_x, crop_offset_y;
+                                   offset_x, offset_y;
     u_char                        *out;
     ngx_buf_t                     *b;
     ngx_uint_t                     resize;
@@ -953,25 +953,22 @@ transparent:
                 return NULL;
             }
 
-            crop_offset_x = conf->crop_offset_x;
-            crop_offset_y = conf->crop_offset_y;
+            offset_x = ngx_http_image_filter_get_value(r, conf->oxcv,
+                                                       conf->crop_offset_x);
+            offset_y = ngx_http_image_filter_get_value(r, conf->oycv,
+                                                       conf->crop_offset_y);
 
-            crop_offset_x = ngx_http_image_filter_get_value(r, conf->oxcv,
-                                                            crop_offset_x);
-            crop_offset_y = ngx_http_image_filter_get_value(r, conf->oycv,
-                                                            crop_offset_y);
-
-            if (crop_offset_x == NGX_HTTP_IMAGE_OFFSET_LEFT) {
+            if (offset_x == NGX_HTTP_IMAGE_OFFSET_LEFT) {
                 ox = 0;
 
-            } else if (crop_offset_x == NGX_HTTP_IMAGE_OFFSET_CENTER) {
+            } else if (offset_x == NGX_HTTP_IMAGE_OFFSET_CENTER) {
                 ox /= 2;
             }
 
-            if (crop_offset_y == NGX_HTTP_IMAGE_OFFSET_TOP) {
+            if (offset_y == NGX_HTTP_IMAGE_OFFSET_TOP) {
                 oy = 0;
 
-            } else if (crop_offset_y == NGX_HTTP_IMAGE_OFFSET_CENTER) {
+            } else if (offset_y == NGX_HTTP_IMAGE_OFFSET_CENTER) {
                 oy /= 2;
             }
 
@@ -1192,10 +1189,7 @@ ngx_http_image_filter_value(ngx_str_t *value)
     n = ngx_atoi(value->data, value->len);
 
     if (n == NGX_ERROR) {
-        if (ngx_strcmp(value->data, "center") == 0) {
-            return NGX_HTTP_IMAGE_OFFSET_CENTER;
-
-        } else if (ngx_strcmp(value->data, "left") == 0) {
+        if (ngx_strcmp(value->data, "left") == 0) {
             return NGX_HTTP_IMAGE_OFFSET_LEFT;
 
         } else if (ngx_strcmp(value->data, "right") == 0) {
@@ -1206,6 +1200,9 @@ ngx_http_image_filter_value(ngx_str_t *value)
 
         } else if (ngx_strcmp(value->data, "bottom") == 0) {
             return NGX_HTTP_IMAGE_OFFSET_BOTTOM;
+
+        } else {
+            return NGX_HTTP_IMAGE_OFFSET_CENTER;
         }
 
     } else if (n > 0) {
