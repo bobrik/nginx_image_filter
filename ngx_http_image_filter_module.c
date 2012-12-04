@@ -55,8 +55,8 @@ typedef struct {
 
     ngx_http_complex_value_t    *wcv;
     ngx_http_complex_value_t    *hcv;
-    ngx_http_complex_value_t    *oxv;
-    ngx_http_complex_value_t    *oyv;
+    ngx_http_complex_value_t    *oxcv;
+    ngx_http_complex_value_t    *oycv;
     ngx_http_complex_value_t    *acv;
     ngx_http_complex_value_t    *jqcv;
     ngx_http_complex_value_t    *shcv;
@@ -956,9 +956,9 @@ transparent:
             crop_offset_x = conf->crop_offset_x;
             crop_offset_y = conf->crop_offset_y;
 
-            crop_offset_x = ngx_http_image_filter_get_value(r, conf->oxv,
+            crop_offset_x = ngx_http_image_filter_get_value(r, conf->oxcv,
                                                             crop_offset_x);
-            crop_offset_y = ngx_http_image_filter_get_value(r, conf->oyv,
+            crop_offset_y = ngx_http_image_filter_get_value(r, conf->oycv,
                                                             crop_offset_y);
 
             if (crop_offset_x == NGX_HTTP_IMAGE_OFFSET_LEFT) {
@@ -1285,12 +1285,12 @@ ngx_http_image_filter_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_uint_value(conf->crop_offset_x, prev->crop_offset_x, NGX_HTTP_IMAGE_OFFSET_CENTER);
     ngx_conf_merge_uint_value(conf->crop_offset_y, prev->crop_offset_y, NGX_HTTP_IMAGE_OFFSET_CENTER);
 
-    if (conf->oxv == NULL) {
-        conf->oxv = prev->oxv;
+    if (conf->oxcv == NULL) {
+        conf->oxcv = prev->oxcv;
     }
 
-    if (conf->oyv == NULL) {
-        conf->oyv = prev->oyv;
+    if (conf->oycv == NULL) {
+        conf->oycv = prev->oycv;
     }
 
     return NGX_CONF_OK;
@@ -1571,12 +1571,12 @@ ngx_http_image_filter_offset(ngx_conf_t *cf, ngx_command_t *cmd,
         imcf->crop_offset_x = ngx_http_image_filter_value(&value[1]);
 
     } else {
-        imcf->oxv = ngx_palloc(cf->pool, sizeof(ngx_http_complex_value_t));
-        if (imcf->oxv == NULL) {
+        imcf->oxcv = ngx_palloc(cf->pool, sizeof(ngx_http_complex_value_t));
+        if (imcf->oxcv == NULL) {
             return NGX_CONF_ERROR;
         }
 
-        *imcf->oxv = cv;
+        *imcf->oxcv = cv;
     }
 
     ngx_memzero(&ccv, sizeof(ngx_http_compile_complex_value_t));
@@ -1594,12 +1594,12 @@ ngx_http_image_filter_offset(ngx_conf_t *cf, ngx_command_t *cmd,
         imcf->crop_offset_y = ngx_http_image_filter_value(&value[2]);
 
     } else {
-        imcf->oyv = ngx_palloc(cf->pool, sizeof(ngx_http_complex_value_t));
-        if (imcf->oyv == NULL) {
+        imcf->oycv = ngx_palloc(cf->pool, sizeof(ngx_http_complex_value_t));
+        if (imcf->oycv == NULL) {
             return NGX_CONF_ERROR;
         }
 
-        *imcf->oyv = cv;
+        *imcf->oycv = cv;
     }
 
     return NGX_CONF_OK;
