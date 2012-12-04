@@ -1189,27 +1189,27 @@ ngx_http_image_filter_value(ngx_str_t *value)
         return (ngx_uint_t) -1;
     }
 
-    if (ngx_strcmp(value->data, "center") == 0) {
-        return NGX_HTTP_IMAGE_OFFSET_CENTER;
+    n = ngx_atoi(value->data, value->len);
 
-    } else if (ngx_strcmp(value->data, "left") == 0) {
-        return NGX_HTTP_IMAGE_OFFSET_LEFT;
+    if (n == NGX_ERROR) {
+        if (ngx_strcmp(value->data, "center") == 0) {
+            return NGX_HTTP_IMAGE_OFFSET_CENTER;
 
-    } else if (ngx_strcmp(value->data, "right") == 0) {
-        return NGX_HTTP_IMAGE_OFFSET_RIGHT;
+        } else if (ngx_strcmp(value->data, "left") == 0) {
+            return NGX_HTTP_IMAGE_OFFSET_LEFT;
 
-    } else if (ngx_strcmp(value->data, "top") == 0) {
-        return NGX_HTTP_IMAGE_OFFSET_TOP;
+        } else if (ngx_strcmp(value->data, "right") == 0) {
+            return NGX_HTTP_IMAGE_OFFSET_RIGHT;
 
-    } else if (ngx_strcmp(value->data, "bottom") == 0) {
-        return NGX_HTTP_IMAGE_OFFSET_BOTTOM;
+        } else if (ngx_strcmp(value->data, "top") == 0) {
+            return NGX_HTTP_IMAGE_OFFSET_TOP;
 
-    } else {
-        n = ngx_atoi(value->data, value->len);
-
-        if (n > 0) {
-            return (ngx_uint_t) n;
+        } else if (ngx_strcmp(value->data, "bottom") == 0) {
+            return NGX_HTTP_IMAGE_OFFSET_BOTTOM;
         }
+
+    } else if (n > 0) {
+        return (ngx_uint_t) n;
     }
 
     return 0;
@@ -1282,8 +1282,10 @@ ngx_http_image_filter_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_size_value(conf->buffer_size, prev->buffer_size,
                               1 * 1024 * 1024);
 
-    ngx_conf_merge_uint_value(conf->crop_offset_x, prev->crop_offset_x, NGX_HTTP_IMAGE_OFFSET_CENTER);
-    ngx_conf_merge_uint_value(conf->crop_offset_y, prev->crop_offset_y, NGX_HTTP_IMAGE_OFFSET_CENTER);
+    ngx_conf_merge_uint_value(conf->crop_offset_x, prev->crop_offset_x,
+                              NGX_HTTP_IMAGE_OFFSET_CENTER);
+    ngx_conf_merge_uint_value(conf->crop_offset_y, prev->crop_offset_y,
+                              NGX_HTTP_IMAGE_OFFSET_CENTER);
 
     if (conf->oxcv == NULL) {
         conf->oxcv = prev->oxcv;
