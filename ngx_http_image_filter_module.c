@@ -1189,16 +1189,16 @@ ngx_http_image_filter_value(ngx_str_t *value)
     n = ngx_atoi(value->data, value->len);
 
     if (n == NGX_ERROR) {
-        if (ngx_strcmp(value->data, "left") == 0) {
+        if (ngx_strncmp(value->data, "left", value->len) == 0) {
             return NGX_HTTP_IMAGE_OFFSET_LEFT;
 
-        } else if (ngx_strcmp(value->data, "right") == 0) {
+        } else if (ngx_strncmp(value->data, "right", value->len) == 0) {
             return NGX_HTTP_IMAGE_OFFSET_RIGHT;
 
-        } else if (ngx_strcmp(value->data, "top") == 0) {
+        } else if (ngx_strncmp(value->data, "top", value->len) == 0) {
             return NGX_HTTP_IMAGE_OFFSET_TOP;
 
-        } else if (ngx_strcmp(value->data, "bottom") == 0) {
+        } else if (ngx_strncmp(value->data, "bottom", value->len) == 0) {
             return NGX_HTTP_IMAGE_OFFSET_BOTTOM;
 
         } else {
