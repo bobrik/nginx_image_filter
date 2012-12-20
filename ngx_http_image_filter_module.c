@@ -1279,17 +1279,22 @@ ngx_http_image_filter_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_size_value(conf->buffer_size, prev->buffer_size,
                               1 * 1024 * 1024);
 
-    ngx_conf_merge_uint_value(conf->crop_offset_x, prev->crop_offset_x,
-                              NGX_HTTP_IMAGE_OFFSET_CENTER);
-    ngx_conf_merge_uint_value(conf->crop_offset_y, prev->crop_offset_y,
-                              NGX_HTTP_IMAGE_OFFSET_CENTER);
+    if (conf->crop_offset_x == NGX_CONF_UNSET_UINT) {
+        ngx_conf_merge_uint_value(conf->crop_offset_x, prev->crop_offset_x,
+                                  NGX_HTTP_IMAGE_OFFSET_CENTER);
 
-    if (conf->oxcv == NULL) {
-        conf->oxcv = prev->oxcv;
+        if (conf->oxcv == NULL) {
+            conf->oxcv = prev->oxcv;
+        }
     }
 
-    if (conf->oycv == NULL) {
-        conf->oycv = prev->oycv;
+    if (conf->crop_offset_y == NGX_CONF_UNSET_UINT) {
+        ngx_conf_merge_uint_value(conf->crop_offset_y, prev->crop_offset_y,
+                                  NGX_HTTP_IMAGE_OFFSET_CENTER);
+
+        if (conf->oycv == NULL) {
+            conf->oycv = prev->oycv;
+        }
     }
 
     return NGX_CONF_OK;
