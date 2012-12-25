@@ -1178,28 +1178,36 @@ ngx_http_image_filter_get_value(ngx_http_request_t *r,
 
 
 static ngx_uint_t
-ngx_http_image_filter_value(ngx_str_t *value)
+ngx_http_image_filter_value(ngx_str_t *v)
 {
     ngx_int_t  n;
 
-    if (value->len == 1 && value->data[0] == '-') {
+    if (v->len == 1 && v->data[0] == '-') {
         return (ngx_uint_t) -1;
     }
 
-    n = ngx_atoi(value->data, value->len);
+    n = ngx_atoi(v->data, v->len);
 
     if (n == NGX_ERROR) {
 
-        if (ngx_strncmp(value->data, "left", value->len) == 0) {
+        if (v->len == sizeof("left") - 1
+            && ngx_strncmp(v->data, "left", v->len) == 0)
+        {
             return NGX_HTTP_IMAGE_OFFSET_LEFT;
 
-        } else if (ngx_strncmp(value->data, "right", value->len) == 0) {
+        } else if (v->len == sizeof("right") - 1
+                   && ngx_strncmp(v->data, "right", sizeof("right") - 1) == 0)
+        {
             return NGX_HTTP_IMAGE_OFFSET_RIGHT;
 
-        } else if (ngx_strncmp(value->data, "top", value->len) == 0) {
+        } else if (v->len == sizeof("top") - 1
+                   && ngx_strncmp(v->data, "top", sizeof("top") - 1) == 0)
+        {
             return NGX_HTTP_IMAGE_OFFSET_TOP;
 
-        } else if (ngx_strncmp(value->data, "bottom", value->len) == 0) {
+        } else if (v->len == sizeof("bottom") - 1
+                   && ngx_strncmp(v->data, "bottom", sizeof("bottom") - 1) == 0)
+        {
             return NGX_HTTP_IMAGE_OFFSET_BOTTOM;
 
         } else {
@@ -1573,7 +1581,6 @@ ngx_http_image_filter_offset(ngx_conf_t *cf, ngx_command_t *cmd,
     ccv.cf = cf;
     ccv.value = &value[1];
     ccv.complex_value = &cv;
-    ccv.zero = 1;
 
     if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
         return NGX_CONF_ERROR;
@@ -1596,7 +1603,6 @@ ngx_http_image_filter_offset(ngx_conf_t *cf, ngx_command_t *cmd,
     ccv.cf = cf;
     ccv.value = &value[2];
     ccv.complex_value = &cv;
-    ccv.zero = 1;
 
     if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
         return NGX_CONF_ERROR;
