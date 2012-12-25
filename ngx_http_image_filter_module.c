@@ -48,8 +48,8 @@ typedef struct {
     ngx_uint_t                   angle;
     ngx_uint_t                   jpeg_quality;
     ngx_uint_t                   sharpen;
-    ngx_uint_t                   crop_offset_x;
-    ngx_uint_t                   crop_offset_y;
+    ngx_uint_t                   offset_x;
+    ngx_uint_t                   offset_y;
 
     ngx_flag_t                   transparency;
 
@@ -75,8 +75,8 @@ typedef struct {
     ngx_uint_t                   height;
     ngx_uint_t                   max_width;
     ngx_uint_t                   max_height;
-    ngx_uint_t                   crop_offset_x;
-    ngx_uint_t                   crop_offset_y;
+    ngx_uint_t                   offset_x;
+    ngx_uint_t                   offset_y;
     ngx_uint_t                   angle;
 
     ngx_uint_t                   phase;
@@ -954,9 +954,9 @@ transparent:
             }
 
             offset_x = ngx_http_image_filter_get_value(r, conf->oxcv,
-                                                       conf->crop_offset_x);
+                                                       conf->offset_x);
             offset_y = ngx_http_image_filter_get_value(r, conf->oycv,
-                                                       conf->crop_offset_y);
+                                                       conf->offset_y);
 
             if (offset_x == NGX_HTTP_IMAGE_OFFSET_LEFT) {
                 ox = 0;
@@ -1229,8 +1229,8 @@ ngx_http_image_filter_create_conf(ngx_conf_t *cf)
     conf->angle = NGX_CONF_UNSET_UINT;
     conf->transparency = NGX_CONF_UNSET;
     conf->buffer_size = NGX_CONF_UNSET_SIZE;
-    conf->crop_offset_x = NGX_CONF_UNSET_UINT;
-    conf->crop_offset_y = NGX_CONF_UNSET_UINT;
+    conf->offset_x = NGX_CONF_UNSET_UINT;
+    conf->offset_y = NGX_CONF_UNSET_UINT;
 
     return conf;
 }
@@ -1286,8 +1286,8 @@ ngx_http_image_filter_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_size_value(conf->buffer_size, prev->buffer_size,
                               1 * 1024 * 1024);
 
-    if (conf->crop_offset_x == NGX_CONF_UNSET_UINT) {
-        ngx_conf_merge_uint_value(conf->crop_offset_x, prev->crop_offset_x,
+    if (conf->offset_x == NGX_CONF_UNSET_UINT) {
+        ngx_conf_merge_uint_value(conf->offset_x, prev->offset_x,
                                   NGX_HTTP_IMAGE_OFFSET_CENTER);
 
         if (conf->oxcv == NULL) {
@@ -1295,8 +1295,8 @@ ngx_http_image_filter_merge_conf(ngx_conf_t *cf, void *parent, void *child)
         }
     }
 
-    if (conf->crop_offset_y == NGX_CONF_UNSET_UINT) {
-        ngx_conf_merge_uint_value(conf->crop_offset_y, prev->crop_offset_y,
+    if (conf->offset_y == NGX_CONF_UNSET_UINT) {
+        ngx_conf_merge_uint_value(conf->offset_y, prev->offset_y,
                                   NGX_HTTP_IMAGE_OFFSET_CENTER);
 
         if (conf->oycv == NULL) {
@@ -1579,7 +1579,7 @@ ngx_http_image_filter_offset(ngx_conf_t *cf, ngx_command_t *cmd,
     }
 
     if (cv.lengths == NULL) {
-        imcf->crop_offset_x = ngx_http_image_filter_value(&value[1]);
+        imcf->offset_x = ngx_http_image_filter_value(&value[1]);
 
     } else {
         imcf->oxcv = ngx_palloc(cf->pool, sizeof(ngx_http_complex_value_t));
@@ -1602,7 +1602,7 @@ ngx_http_image_filter_offset(ngx_conf_t *cf, ngx_command_t *cmd,
     }
 
     if (cv.lengths == NULL) {
-        imcf->crop_offset_y = ngx_http_image_filter_value(&value[2]);
+        imcf->offset_y = ngx_http_image_filter_value(&value[2]);
 
     } else {
         imcf->oycv = ngx_palloc(cf->pool, sizeof(ngx_http_complex_value_t));
