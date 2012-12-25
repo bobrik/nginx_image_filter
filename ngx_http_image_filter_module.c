@@ -1189,6 +1189,7 @@ ngx_http_image_filter_value(ngx_str_t *value)
     n = ngx_atoi(value->data, value->len);
 
     if (n == NGX_ERROR) {
+
         if (ngx_strncmp(value->data, "left", value->len) == 0) {
             return NGX_HTTP_IMAGE_OFFSET_LEFT;
 
