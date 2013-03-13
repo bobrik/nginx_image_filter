@@ -52,6 +52,7 @@ typedef struct {
     ngx_uint_t                   offset_y;
 
     ngx_flag_t                   transparency;
+    ngx_flag_t                   interlace;
 
     ngx_http_complex_value_t    *wcv;
     ngx_http_complex_value_t    *hcv;
@@ -140,6 +141,13 @@ static ngx_command_t  ngx_http_image_filter_commands[] = {
       ngx_http_image_filter_jpeg_quality,
       NGX_HTTP_LOC_CONF_OFFSET,
       0,
+      NULL },
+
+   { ngx_string("image_filter_interlace"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_image_filter_conf_t, interlace),
       NULL },
 
     { ngx_string("image_filter_sharpen"),
@@ -1115,10 +1123,13 @@ ngx_http_image_out(ngx_http_request_t *r, ngx_uint_t type, gdImagePtr img,
 
     out = NULL;
 
+    conf = ngx_http_get_module_loc_conf(r, ngx_http_image_filter_module);
+
+    gdImageInterlace(img, conf->interlace);
+
     switch (type) {
 
     case NGX_HTTP_IMAGE_JPEG:
-        conf = ngx_http_get_module_loc_conf(r, ngx_http_image_filter_module);
 
         jq = ngx_http_image_filter_get_value(r, conf->jqcv, conf->jpeg_quality);
         if (jq <= 0) {
@@ -1237,6 +1248,7 @@ ngx_http_image_filter_create_conf(ngx_conf_t *cf)
     conf->sharpen = NGX_CONF_UNSET_UINT;
     conf->angle = NGX_CONF_UNSET_UINT;
     conf->transparency = NGX_CONF_UNSET;
+    conf->interlace = NGX_CONF_UNSET;
     conf->buffer_size = NGX_CONF_UNSET_SIZE;
     conf->offset_x = NGX_CONF_UNSET_UINT;
     conf->offset_y = NGX_CONF_UNSET_UINT;
@@ -1291,6 +1303,8 @@ ngx_http_image_filter_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     }
 
     ngx_conf_merge_value(conf->transparency, prev->transparency, 1);
+
+    ngx_conf_merge_value(conf->interlace, prev->interlace, 0);
 
     ngx_conf_merge_size_value(conf->buffer_size, prev->buffer_size,
                               1 * 1024 * 1024);
