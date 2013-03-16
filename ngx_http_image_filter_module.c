@@ -143,13 +143,6 @@ static ngx_command_t  ngx_http_image_filter_commands[] = {
       0,
       NULL },
 
-   { ngx_string("image_filter_interlace"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
-      ngx_conf_set_flag_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_image_filter_conf_t, interlace),
-      NULL },
-
     { ngx_string("image_filter_sharpen"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_http_image_filter_sharpen,
@@ -162,6 +155,13 @@ static ngx_command_t  ngx_http_image_filter_commands[] = {
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_image_filter_conf_t, transparency),
+      NULL },
+
+   { ngx_string("image_filter_interlace"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_image_filter_conf_t, interlace),
       NULL },
 
     { ngx_string("image_filter_buffer"),
@@ -1125,7 +1125,7 @@ ngx_http_image_out(ngx_http_request_t *r, ngx_uint_t type, gdImagePtr img,
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_image_filter_module);
 
-    gdImageInterlace(img, conf->interlace);
+    gdImageInterlace(img, (int) conf->interlace);
 
     switch (type) {
 
