@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
@@ -31,6 +30,7 @@
 #define NGX_HTTP_IMAGE_JPEG      1
 #define NGX_HTTP_IMAGE_GIF       2
 #define NGX_HTTP_IMAGE_PNG       3
+#define NGX_HTTP_IMAGE_BMP       4
 
 #define NGX_HTTP_IMAGE_OFFSET_CENTER    0
 #define NGX_HTTP_IMAGE_OFFSET_LEFT      1
@@ -212,7 +212,8 @@ static ngx_http_output_body_filter_pt    ngx_http_next_body_filter;
 static ngx_str_t  ngx_http_image_types[] = {
     ngx_string("image/jpeg"),
     ngx_string("image/gif"),
-    ngx_string("image/png")
+    ngx_string("image/png"),
+    ngx_string("image/bmp")
 };
 
 
@@ -453,6 +454,10 @@ ngx_http_image_test(ngx_http_request_t *r, ngx_chain_t *in)
         /* PNG */
 
         return NGX_HTTP_IMAGE_PNG;
+    } else if (p[0] == 'B' && p[1] == 'M')
+    {
+    	 /* BMP */
+    	 return NGX_HTTP_IMAGE_BMP;
     }
 
     return NGX_HTTP_IMAGE_NONE;
@@ -736,6 +741,16 @@ ngx_http_image_size(ngx_http_request_t *r, ngx_http_image_filter_ctx_t *ctx)
         height = p[22] * 256 + p[23];
 
         break;
+        
+    case NGX_HTTP_IMAGE_BMP:
+    	if (ctx->length < 26) {
+            return NGX_DECLINED;
+        }
+
+        width = p[19] * 256 + p[18];
+        height = p[23] * 256 + p[22];
+        
+    	break;
 
     default:
 
@@ -1062,6 +1077,11 @@ ngx_http_image_source(ngx_http_request_t *r, ngx_http_image_filter_ctx_t *ctx)
         img = gdImageCreateFromPngPtr(ctx->length, ctx->image);
         failed = "gdImageCreateFromPngPtr() failed";
         break;
+        
+    case NGX_HTTP_IMAGE_BMP:
+        img = gdImageCreateFromBmpPtr(ctx->length, ctx->image);
+        failed = "gdImageCreateFromBmpPtr() failed";
+        break;
 
     default:
         failed = "unknown image type";
@@ -1137,6 +1157,11 @@ ngx_http_image_out(ngx_http_request_t *r, ngx_uint_t type, gdImagePtr img,
     case NGX_HTTP_IMAGE_PNG:
         out = gdImagePngPtr(img, size);
         failed = "gdImagePngPtr() failed";
+        break;
+        
+    case NGX_HTTP_IMAGE_BMP:
+        out = gdImageBmpPtr(img, size, -1);
+        failed = "gdImageBmpPtr() failed";
         break;
 
     default:
